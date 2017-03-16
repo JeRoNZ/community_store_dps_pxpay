@@ -1,6 +1,8 @@
 # Community Store DPS PXPay2
 DPS Payment Express PXPay2 payments for Community Store for concrete5
 
+https://github.com/concrete5-community-store/community_store
+
 Install Community Store First.
 
 You will need to obtain a user name and key from Payment Express
