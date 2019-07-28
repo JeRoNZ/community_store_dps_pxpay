@@ -8,6 +8,7 @@ namespace Concrete\Package\CommunityStoreDpsPxpay\Src\CommunityStore\Payment\Met
  */
 
 use Core;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use URL;
 use Config;
 use Session;
@@ -103,9 +104,9 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod
 		// It does NOT affect the store transaction in any way.
 		$request->setEnableAddBillCard(Config::get('community_store_dps_pxpay.pxpay2EnableBillCard'));
 
-		$base = \Core::getApplicationURL();
-		$request->setUrlFail($base . '/checkout/pxpayfail');
-		$request->setUrlSuccess($base . '/checkout/pxpaysuccess');
+		#$base = \Core::getApplicationURL();
+		$request->setUrlFail((string) \URL::to('/checkout/pxpayfail'));
+		$request->setUrlSuccess((string) \URL::to('/checkout/pxpaysuccess'));
 
 		$request_string = $request->makeRequest();
 		if ($request_string === false) {
@@ -132,9 +133,7 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod
 	{
 		$response = $this->getResponse();
 		if ((string) $response->Success != '1') {
-			$this->redirect('/checkout/pxpayfail');
-
-			return;
+			return new RedirectResponse(\URL::to('/checkout/pxpayfail'));
 		}
 
 		$oid = (string) $response->MerchantReference;
@@ -158,16 +157,14 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod
 			// Complete the order, pushing in the tx ref.
 			$order->completeOrder((string) $response->DpsTxnRef);
 		}
-
-		$this->redirect('/checkout/complete');
-		die();
+		return new RedirectResponse(\URL::to('/checkout/complete'));
 	}
 
 	public function DPSFail ()
 	{
 		$response = $this->getResponse();
 		Session::set('paymentErrors', (string) $response->ResponseText);
-		$this->redirect('/checkout/failed');
+		return new RedirectResponse(\URL::to('/checkout/failed'));
 
 	}
 
