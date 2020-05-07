@@ -10,17 +10,22 @@ use \Concrete\Package\CommunityStore\Src\CommunityStore\Payment\Method as Paymen
 class Controller extends Package
 {
     protected $pkgHandle = 'community_store_dps_pxpay';
-    protected $appVersionRequired = '5.7.2';
-    protected $pkgVersion = '0.9';
+    protected $appVersionRequired = '8.4.2';
+    protected $pkgVersion = '2.0.0';
+
+	protected $pkgAutoloaderRegistries = [
+		'src/CommunityStore' => '\Concrete\Package\CommunityStoreDpsPxpay\Src\CommunityStore',
+		'src/Lib' => '\Concrete\Package\CommunityStoreDpsPxpay\Src\Lib',
+	];
 
     public function getPackageDescription()
     {
-        return t("DPS Payment Express PXPay2 Payment Method for Community Store");
+        return t("Windcave / DPS Payment Express PXPay2 Payment Method for Community Store");
     }
 
     public function getPackageName()
     {
-        return t("DPS PXPay2 Payment Method");
+        return t("Windcave / DPS PXPay2 Payment Method");
     }
 
     public function install()
