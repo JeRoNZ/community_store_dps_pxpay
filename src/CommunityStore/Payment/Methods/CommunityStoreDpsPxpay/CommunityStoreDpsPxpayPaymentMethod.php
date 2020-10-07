@@ -204,6 +204,17 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 		$session = Core::make('session');
 		/* @var $session \Symfony\Component\HttpFoundation\Session\Session */
 		$session->set('paymentErrors', (string) $response->ResponseText);
+		
+		// failed page gives exceptions in the logs when visited by DPS FPN because there's no session info.
+		// Don't bother redirecting if it's the FPN calling
+		$ua = $this->request->server->get('HTTP_USER_AGENT');
+
+		if ($ua === 'PXL1') {
+			$this->log(t('PXL1 user agent detected, not redirecting'));
+			// Meaningless response, but it gives a 200 status which is what we want
+			
+			return new JsonResponse(['OK' => 1]);
+		}
 
 		$this->log(t('Redirecting to /checkout/failed'));
 
