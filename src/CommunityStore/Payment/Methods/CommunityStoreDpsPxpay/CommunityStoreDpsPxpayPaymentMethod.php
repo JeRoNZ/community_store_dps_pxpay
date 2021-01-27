@@ -19,6 +19,7 @@ use \Concrete\Package\CommunityStore\Src\CommunityStore\Order\Order as StoreOrde
 use \Concrete\Package\CommunityStore\Src\CommunityStore\Customer\Customer as StoreCustomer;
 use Concrete\Core\Logging\Logger;
 use Concrete\Package\CommunityStoreDpsPxpay\Src\Lib\PXPay2;
+use Concrete\Core\Logging\LoggerFactory;
 
 class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 	/* @var $logger \Monolog\Logger */
@@ -77,7 +78,7 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 			}
 		}
 		if (!$this->logger) {
-			$this->logger = new Logger('windcave');
+			$this->logger = Core::make(LoggerFactory::class)->createLogger('windcave');
 		}
 		if ($force) {
 			$this->logger->addError($message);
