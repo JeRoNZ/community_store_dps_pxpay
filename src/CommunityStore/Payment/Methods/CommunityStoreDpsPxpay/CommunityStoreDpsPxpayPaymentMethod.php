@@ -8,8 +8,12 @@ namespace Concrete\Package\CommunityStoreDpsPxpay\Src\CommunityStore\Payment\Met
  * License: MIT
  */
 
+use Concrete\Core\Error\ErrorList\ErrorList;
 use Concrete\Core\Http\Request;
+use Concrete\Core\Support\Facade\Application;
 use Core;
+use IPLib\Address\AddressInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use URL;
 use Config;
@@ -17,7 +21,6 @@ use Config;
 use \Concrete\Package\CommunityStore\Src\CommunityStore\Payment\Method as StorePaymentMethod;
 use \Concrete\Package\CommunityStore\Src\CommunityStore\Order\Order as StoreOrder;
 use \Concrete\Package\CommunityStore\Src\CommunityStore\Customer\Customer as StoreCustomer;
-use Concrete\Core\Logging\Logger;
 use Concrete\Package\CommunityStoreDpsPxpay\Src\Lib\PXPay2;
 use Concrete\Core\Logging\LoggerFactory;
 
@@ -35,12 +38,13 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 		$this->set('pxpay2Debug', Config::get('community_store_dps_pxpay.pxpay2Debug'));
 		// These are the only currencies supported by DPS, AFAIK.
 		$currencies = array(
-			'AUD' => "Australian Dollar",
-			'NZD' => "New Zealand Dollar",
-			'USD' => "U.S. Dollar"
+			'AUD' => 'Australian Dollar',
+			'NZD' => 'New Zealand Dollar',
+			'USD' => 'US Dollar'
 		);
 		$this->set('currencies', $currencies);
-		$this->set('form', Core::make("helper/form"));
+		$app = Application::getFacadeApplication();
+		$this->set('form', $app->make('helper/form'));
 	}
 
 	public function save (array $data = []) {
@@ -56,14 +60,14 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 	public function validate ($args, $e) {
 		$pm = StorePaymentMethod::getByHandle('community_store_dps_pxpay');
 		if ($args['paymentMethodEnabled'][$pm->getID()] == 1) {
-			if ($args['pxpay2UserID'] == "") {
-				$e->add(t("User ID must be set"));
+			if ($args['pxpay2UserID'] == '') {
+				$e->add(t('User ID must be set'));
 			}
-			if ($args['pxpay2AccessKey'] == "") {
-				$e->add(t("Access key must be set"));
+			if ($args['pxpay2AccessKey'] == '') {
+				$e->add(t('Access key must be set'));
 			}
-			if ($args['pxpay2URL'] == "") {
-				$e->add(t("PXPay2 URL must be set"));
+			if ($args['pxpay2URL'] == '') {
+				$e->add(t('PXPay2 URL must be set'));
 			}
 		}
 
@@ -78,7 +82,8 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 			}
 		}
 		if (!$this->logger) {
-			$this->logger = Core::make(LoggerFactory::class)->createLogger('windcave');
+			$app = Application::getFacadeApplication();
+			$this->logger = $app->make(LoggerFactory::class)->createLogger('windcave');
 		}
 		if ($force) {
 			$this->logger->addError($message);
@@ -97,7 +102,9 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 		// we redirect the browser directly to the gateway.
 		$request = $this->makeRequest();
 
-		$session = Core::make('session');
+		$app = Application::getFacadeApplication();
+
+		$session = $app->make('session');
 		/* @var $session \Symfony\Component\HttpFoundation\Session\Session */
 
 		$oid = $session->get('orderID');
@@ -108,12 +115,36 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 		}
 		/* @var $order StoreOrder */
 
+		// Prevent huge numbers of card requests from compromised card list
+		$ccAttempts = $session->get('ccAttempts') ?: 0;
+
+		/** @var $ip  AddressInterface */
+		$ip = $app->make(AddressInterface::class);
+
+		$maxAttempts =  Config::get('community_store_dps_pxpay.max_card_attempts') ?: 10;
+
+		if (++$ccAttempts > $maxAttempts) {
+			$this->log(t('More than %s checkout attempts from IP %s', $maxAttempts, $ip), true);
+			// Ban the IP
+			$app->make('failed_login')->addToBlacklistForThresholdReached();
+
+			throw new \Exception('Payment attempt limit exceeded');
+		}
+
+		$session->set('ccAttempts', $ccAttempts);
+
+		if ($app->make('failed_login')->isBlacklisted()){
+			$this->log(t('Checkout attempt from banned IP %s', $ip), true);
+
+			throw new \Exception('Payment attempt limit exceeded');
+		}
+
 		$custID = $order->getCustomerID();
 		$customer = new StoreCustomer($custID);
 
-		$request->setTxnData1($customer->getValue("billing_first_name") . ' ' . $customer->getValue("billing_last_name"));
-		$request->setTxnData2(implode(' ', array($customer->getValue("billing_address")->address1, $customer->getValue("billing_address")->address2)));
-		$request->setTxnData3($customer->getValue("billing_address")->city);
+		$request->setTxnData1($customer->getValue('billing_first_name') . ' ' . $customer->getValue('billing_last_name'));
+		$request->setTxnData2(implode(' ', array($customer->getValue('billing_address')->address1, $customer->getValue('billing_address')->address2)));
+		$request->setTxnData3($customer->getValue('billing_address')->city);
 
 		$request->setAmountInput($order->getTotal());
 
@@ -126,7 +157,6 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 		// It does NOT affect the store transaction in any way.
 		$request->setEnableAddBillCard(Config::get('community_store_dps_pxpay.pxpay2EnableBillCard'));
 
-		#$base = \Core::getApplicationURL();
 		$request->setUrlFail((string) \URL::to('/checkout/pxpayfail'));
 		$request->setUrlSuccess((string) \URL::to('/checkout/pxpaysuccess'));
 
@@ -137,6 +167,8 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 			throw new \Exception('Error communicating with card gateway');
 		}
 
+		// We can't return a redirect response object, because nothing's listening for the return value.
+		// Do it the crusty old way:
 		header("Location: $request_string");
 		die();
 	}
@@ -194,6 +226,13 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 		} else {
 			$this->log(t('NOT Completing order because it already has a transaction reference set'.$userStuff));
 		}
+
+		// remove any credit card session attempts as they're likely legitimate if they made it.
+		$app = Application::getFacadeApplication();
+		/* @var $session \Symfony\Component\HttpFoundation\Session\Session */
+		$session = $app->make('session');
+		$session->remove('ccAttempts');
+
 		$this->log(t('Redirecting to /checkout/complete'));
 
 		return new RedirectResponse(\URL::to('/checkout/complete'));
@@ -202,9 +241,10 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 	public function DPSFail () {
 		$response = $this->getResponse();
 		$this->log(__METHOD__ . PHP_EOL . var_export($response, true));
-		$session = Core::make('session');
-		/* @var $session \Symfony\Component\HttpFoundation\Session\Session */
-		$session->set('paymentErrors', (string) $response->ResponseText);
+
+		$error = new ErrorList();
+		$error->add( (string) $response->ResponseText);
+		$this->flash('error', $error);
 		
 		// failed page gives exceptions in the logs when visited by DPS FPN because there's no session info.
 		// Don't bother redirecting if it's the FPN calling
