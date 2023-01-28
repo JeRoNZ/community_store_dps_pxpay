@@ -2,4 +2,4 @@
 extract($vars);
 ?>
 
-<p><?= t("Click \"Complete Order\" to Proceed to the Payment Express Website.")?></p>
+<p><?= t("Click \"Complete Order\" to Proceed to the Windcave Website.")?></p>

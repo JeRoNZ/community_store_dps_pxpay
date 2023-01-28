@@ -2,8 +2,9 @@
 
 namespace Concrete\Package\CommunityStoreDpsPxpay;
 
-use Package;
+use Concrete\Core\Package\Package;
 use Route;
+use Config;
 use Whoops\Exception\ErrorException;
 use \Concrete\Package\CommunityStore\Src\CommunityStore\Payment\Method as PaymentMethod;
 
@@ -11,7 +12,8 @@ class Controller extends Package
 {
     protected $pkgHandle = 'community_store_dps_pxpay';
     protected $appVersionRequired = '8.5.0';
-    protected $pkgVersion = '2.0.1';
+    protected $pkgVersion = '2.0.2';
+
 
 	protected $pkgAutoloaderRegistries = [
 		'src/CommunityStore' => '\Concrete\Package\CommunityStoreDpsPxpay\Src\CommunityStore',
@@ -40,6 +42,14 @@ class Controller extends Package
         }
 
     }
+
+    public function upgrade(){
+    	if (Config::get('community_store_dps_pxpay.pxpay2Receipt') === null) {
+			Config::save('community_store_dps_pxpay.pxpay2Receipt', '1');
+		}
+    	parent::upgrade();
+	}
+
     public function uninstall()
     {
         $pm = PaymentMethod::getByHandle('community_store_dps_pxpay');

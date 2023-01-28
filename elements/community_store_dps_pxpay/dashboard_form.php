@@ -33,8 +33,17 @@ extract($vars);
 	<input type="text" name="pxpay2AccessKey" value="<?= $pxpay2AccessKey ?>" class="form-control">
 </div>
 
-<div class="form-group">
-    <div class="checkbox">
-        <label><input name="pxpay2Debug" value="1" <?= $pxpay2Debug ? 'checked' : '' ?> type="checkbox"><?= t("Debug logging") ?></label>
+<div class="row">
+    <div class="col-md-6">
+        <div class="checkbox form-check">
+            <label class="control-label"><input class="form-check-input" name="pxpay2Debug" value="1" <?= $pxpay2Debug ? 'checked' : '' ?> type="checkbox"><?= t("Debug logging") ?>
+            </label>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="checkbox form-check">
+            <label class="control-label"><input class="form-check-input"  name="pxpay2Receipt" value="1" <?= $pxpay2Receipt ? 'checked' : '' ?>
+                                                type="checkbox"><?= t("Send order receipt") ?></label>
+        </div>
     </div>
 </div>

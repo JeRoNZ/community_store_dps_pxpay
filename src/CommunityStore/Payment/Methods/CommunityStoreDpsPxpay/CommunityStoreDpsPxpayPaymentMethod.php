@@ -36,6 +36,7 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 		$this->set('pxpay2UserID', Config::get('community_store_dps_pxpay.pxpay2UserID'));
 		$this->set('pxpay2AccessKey', Config::get('community_store_dps_pxpay.pxpay2AccessKey'));
 		$this->set('pxpay2Debug', Config::get('community_store_dps_pxpay.pxpay2Debug'));
+		$this->set('pxpay2Receipt', Config::get('community_store_dps_pxpay.pxpay2Receipt'));
 		// These are the only currencies supported by DPS, AFAIK.
 		$currencies = array(
 			'AUD' => 'Australian Dollar',
@@ -55,6 +56,7 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 		Config::save('community_store_dps_pxpay.pxpay2UserID', $data['pxpay2UserID']);
 		Config::save('community_store_dps_pxpay.pxpay2AccessKey', $data['pxpay2AccessKey']);
 		Config::save('community_store_dps_pxpay.pxpay2Debug', ($data['pxpay2Debug'] ? 1 : 0));
+		Config::save('community_store_dps_pxpay.pxpay2Receipt', ($data['pxpay2Receipt'] ? 1 : 0));
 	}
 
 	public function validate ($args, $e) {
@@ -73,6 +75,12 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 
 		return $e;
 
+	}
+
+	public function sendReceipt(){
+		$send =  Config::get('community_store_dps_pxpay.pxpay2Receipt') ? true : false;
+		$this->log(t('Receipts are %s', $send ? 'enabled' : 'disabled'));
+		return $send;
 	}
 
 	private function log ($message, $force = false) {
