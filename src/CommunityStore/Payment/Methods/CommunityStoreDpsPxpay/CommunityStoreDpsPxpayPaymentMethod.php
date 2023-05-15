@@ -55,8 +55,8 @@ class CommunityStoreDpsPxpayPaymentMethod extends StorePaymentMethod {
 		Config::save('community_store_dps_pxpay.pxpay2EnableBillCard', $data['pxpay2EnableBillCard']);
 		Config::save('community_store_dps_pxpay.pxpay2UserID', $data['pxpay2UserID']);
 		Config::save('community_store_dps_pxpay.pxpay2AccessKey', $data['pxpay2AccessKey']);
-		Config::save('community_store_dps_pxpay.pxpay2Debug', ($data['pxpay2Debug'] ? 1 : 0));
-		Config::save('community_store_dps_pxpay.pxpay2Receipt', ($data['pxpay2Receipt'] ? 1 : 0));
+		Config::save('community_store_dps_pxpay.pxpay2Debug', (isset($data['pxpay2Debug']) ? 1 : 0));
+		Config::save('community_store_dps_pxpay.pxpay2Receipt', (isset($data['pxpay2Receipt']) ? 1 : 0));
 	}
 
 	public function validate ($args, $e) {
