@@ -1,13 +1,13 @@
 # Community Store Windcave / DPS PXPay2
-Windcave / DPS Payment Express PXPay2 payments for Community Store for concrete5
+Windcave / DPS Payment Express PXPay2 payments for Community Store for Concrete CMS
 
-https://github.com/concrete5-community-store/community_store
+https://github.com/concretecms-community-store/community_store
 
 Install Community Store First.
 
-You will need to obtain a user name and key from Payment Expres / Windcave
+You will need to obtain a user name and key from Windcave / Payment Express
 
-https://www.paymentexpress.com/
+https://www.windcave.com/
 
 A test account can also be used, which again will need to be issued by Windcave
 
