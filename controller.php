@@ -12,7 +12,7 @@ class Controller extends Package
 {
     protected $pkgHandle = 'community_store_dps_pxpay';
     protected $appVersionRequired = '8.5.0';
-    protected $pkgVersion = '2.0.2';
+    protected $pkgVersion = '3.0.0';
 
 
 	protected $pkgAutoloaderRegistries = [
@@ -38,15 +38,23 @@ class Controller extends Package
         } else {
             $pkg = parent::install();
             $pm = new PaymentMethod();
-            $pm->add('community_store_dps_pxpay','DPS',$pkg);
+            $pm->add('community_store_dps_pxpay','WindCave',$pkg);
+	        $pm = new PaymentMethod();
+	        $pm->add('community_store_dps_windcave_a2a','WindCave A2A',$pkg);
         }
 
     }
 
     public function upgrade(){
+		$pkg = Package::getByHandle($this->pkgHandle);
     	if (Config::get('community_store_dps_pxpay.pxpay2Receipt') === null) {
 			Config::save('community_store_dps_pxpay.pxpay2Receipt', '1');
 		}
+	    $pm = PaymentMethod::getByHandle('community_store_wind_cave_a2_a');
+	    if (!$pm) {
+		    $pm = new PaymentMethod();
+		    $pm->add('community_store_wind_cave_a2_a','WindCave A2A',$pkg);
+	    }
     	parent::upgrade();
 	}
 
@@ -56,7 +64,11 @@ class Controller extends Package
         if ($pm) {
             $pm->delete();
         }
-        $pkg = parent::uninstall();
+	    $pm = PaymentMethod::getByHandle('community_store_wind_cave_a2_a');
+	    if ($pm) {
+		    $pm->delete();
+	    }
+        parent::uninstall();
     }
 
     public function on_start() {
@@ -64,4 +76,3 @@ class Controller extends Package
         Route::register('/checkout/pxpayfail','\Concrete\Package\CommunityStoreDpsPxpay\Src\CommunityStore\Payment\Methods\CommunityStoreDpsPxpay\CommunityStoreDpsPxpayPaymentMethod::DpsFail');
     }
 }
-?>

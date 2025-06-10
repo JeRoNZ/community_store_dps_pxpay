@@ -126,7 +126,7 @@ class PXPay2 {
 		if (!$this->error) {
 			try {
 				$sx = new \SimpleXMLElement($return);
-			} catch (Exception $e) {
+			} catch (\Exception $e) {
 				$this->error = $e->getMessage();
 
 				return false;
